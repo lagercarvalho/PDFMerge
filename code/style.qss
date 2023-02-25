@@ -1,0 +1,21 @@
+QMainWindow {
+    background-color: #363636;
+    color: #fff;
+}
+
+QWidget {
+    color: #fff;
+    font-weight: 600;
+}
+
+QPushButton{
+    background-color: #404142;
+    border-radius: 8px;
+    border: 1px solid #404142;
+    margin-top: 10px;
+    outline: 0px;
+}
+
+QPushButton:hover {
+  border: 3px solid #9ac3fe;
+}
