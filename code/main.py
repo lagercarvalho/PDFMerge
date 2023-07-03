@@ -1,127 +1,64 @@
-import sys, os
-from pathlib import Path
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QFileDialog, QAbstractItemView, QSizePolicy
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtGui import QIcon
-#import comtypes
-
-class ListboxWidget(QListWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAcceptDrops(True)
-        self.setGeometry(20, 70, 400, 400)
-        self.supportedTypes = (".pdf", ".pptx", ".odp",".doc",".docx",".odt")
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls:
-            event.accept()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls:
-            event.setDropAction(Qt.CopyAction)
-            event.accept()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.setDropAction(Qt.CopyAction)
-            event.accept()
-
-            links = []
-
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    urlName = str(url.toLocalFile())
-                    if (urlName.endswith(self.supportedTypes)):
-                        links.append(urlName)
-                else:
-                    urlName = str(url.toString())
-                    if (urlName.endswith(self.supportedTypes)):
-                        links.append(urlName)
-            self.addItems(links)
-        else:
-            event.ignore()
-
-
-class Button(QPushButton):
-    def __init__(self, name = "None", parent=None):
-        super().__init__(name, parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-class Label(QtWidgets.QLabel):
-    def __init__(self,parent=None):
-        super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-
-class AppWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setGeometry(1200, 300, 700, 500)
-        self.setWindowTitle("Pdf Merger")
-        self.setWindowIcon(QIcon("img/pdf_icon.png"))
-
-        self.label = Label(self)
-        self.label.setText("Add the files to convert and merge:")
-        self.label.setGeometry(20, 20, 200, 20)
-        self.label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.lstView = ListboxWidget(self)
-
-        self.upBtn = Button("Up", self)
-        self.upBtn.setGeometry(430, 85, 50, 50)
-        self.upBtn.clicked.connect(self.moveUp)
-
-        self.downBtn = Button("Down", self)
-        self.downBtn.setGeometry(430, 405, 50, 50)
-        self.downBtn.clicked.connect(self.moveDown)
-
-        self.mergeBtn = Button("Merge", self)
-        self.mergeBtn.setGeometry(500, 305, 150, 50)
-        self.mergeBtn.clicked.connect(self.merge)
-
-        self.browseBtn = Button("Browse", self)
-        self.browseBtn.setGeometry(500, 205, 150, 50)
-        self.browseBtn.clicked.connect(self.searchFile)
-        
-        self.show()
-
-    def merge(self):
-        for item in self.lstView.items():
-            #todo continue working on the merge function
-            break
-
-    def searchFile(self):
-        permissions = "PDF files (*.pdf);;Powerpoint files (*.pptx, *.odp);;Word documents(*.doc,*.docx,*odt)"
-        fileName = QFileDialog.getOpenFileName(self, 'Open File', os.environ['HOMEPATH'], permissions)
-        print(fileName)
-        if fileName:
-            self.lstView.addItem(fileName[0])
-
-    def move(self, dir):
-        currentRow = self.currentRow()
-        currentItem = self.takeItem(currentRow)
-        self.insertItem(currentRow + dir, currentItem)
-
-    def moveUp(self):
-        self.move(self, -1)
-
-    def moveDown(self):
-        self.move(self, 1)
-
+import sys
+import os
+from os.path import isfile, join
+import PyPDF2
 
 def main():
-    app = QApplication(sys.argv)
-    app.setStyleSheet(Path('style.qss').read_text())
+  args = sys.argv[1:]
+  all = False
+  input_path = ''
+  pattern = None
+  
+  if '--h' in args or '--help' in args:
+    print('Help message')
+  
+  if '--all' in args:
+    all = True
+  
+  if '--pattern' in args:
+    pattern = get_flag_value('--pattern', args)
 
-    win = AppWindow()
+  if '--input_path' in args:
+    input_path = get_flag_value('--input_path', args)
 
-    sys.exit(app.exec_())
+  if '--output_path' in args:
+    output_path = get_flag_value('--input_path', args)
+  else
+    output_path = 'merge.pdf'
+
+  input_paths = get_input_paths(all, pattern, input_path, current_dir)
+
+  merge_pdfs(output_path)
+
+
+def get_flag_value(flag, args):
+  try:
+    index = args.index(flag)
+    if '--' in args[index + 1]:
+      print(f"{flag} cannot be followed by a flag, please try again")
+    return args[index + 1]
+  except (IndexError):
+    print(f"{flag} must be followed by a value")
+    return None
+  
+def merge_pdfs(output_path, *input_paths):
+  pdf_merger = PyPDF2.PdfFileMerger()
+
+  for path in input_paths:
+    with open(path, 'rb') as file:
+      pdf_merger.append(file)
+  
+  with open(output_path, 'wb') as file:
+    pdf_merger.write(file)
+
+def get_input_paths(all, pattern, input_path, current_dir):
+  current_dir = os.getcwd()
+  arr = []
+  files = [file for file in os.listdir(current_dir) if isfile(join(current_dir, file))]
+  if all:
+    arr = files
+  elif pattern:
+    arr = files.map
 
 if __name__ == "__main__":
-    main()
+  main()
