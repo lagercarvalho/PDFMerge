@@ -5,17 +5,15 @@ import PyPDF2
 
 def main():
   args = sys.argv[1:]
-  all = False
-  input_path = ''
+  all = True
+  input_path = os.getcwd()
   pattern = None
   
   if '--h' in args or '--help' in args:
     print('Help message')
   
-  if '--all' in args:
-    all = True
-  
   if '--pattern' in args:
+    all = False
     pattern = get_flag_value('--pattern', args)
 
   if '--input_path' in args:
@@ -23,12 +21,17 @@ def main():
 
   if '--output_path' in args:
     output_path = get_flag_value('--input_path', args)
-  else
-    output_path = 'merge.pdf'
+  else:
+    output_path = input_path + '\merge.pdf'
 
-  input_paths = get_input_paths(all, pattern, input_path, current_dir)
+  input_paths = get_input_paths(all, pattern, input_path)
+  print(f"The following files with {'the ' + pattern.lower() + ' pattern' if pattern else 'no pattern'} will be merged to {output_path}:\n")
+  for path in input_paths:
+    print("  * " + path)
+  print("")
 
-  merge_pdfs(output_path)
+  merge_pdfs(output_path, input_paths)
+  print("Merge complete")
 
 
 def get_flag_value(flag, args):
@@ -41,8 +44,8 @@ def get_flag_value(flag, args):
     print(f"{flag} must be followed by a value")
     return None
   
-def merge_pdfs(output_path, *input_paths):
-  pdf_merger = PyPDF2.PdfFileMerger()
+def merge_pdfs(output_path, input_paths):
+  pdf_merger = PyPDF2.PdfMerger()
 
   for path in input_paths:
     with open(path, 'rb') as file:
@@ -51,14 +54,14 @@ def merge_pdfs(output_path, *input_paths):
   with open(output_path, 'wb') as file:
     pdf_merger.write(file)
 
-def get_input_paths(all, pattern, input_path, current_dir):
-  current_dir = os.getcwd()
+def get_input_paths(all, pattern, path):
   arr = []
-  files = [file for file in os.listdir(current_dir) if isfile(join(current_dir, file))]
+  files = [file for file in os.listdir(path) if isfile(join(path, file))]
   if all:
-    arr = files
+    arr = [join(path, file) for file in files]
   elif pattern:
-    arr = files.map
+    arr = [join(path, file) for file in files if pattern.lower() in file.lower()]
+  return arr
 
 if __name__ == "__main__":
   main()
